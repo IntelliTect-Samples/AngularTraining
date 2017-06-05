@@ -1,2 +1,2 @@
-<new-time-entry></new-time-entry>
-<time-entry-list></time-entry-list>
+<new-time-entry [timesheetEntry]="timesheetEntry" (createEntry)="saveEntry($event)"></new-time-entry>
+<time-entry-list [timesheetEntries]="timesheetEntries"></time-entry-list>

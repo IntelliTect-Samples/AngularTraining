@@ -1,3 +1,14 @@
-<p>
-  time-entry-list works!
-</p>
+<div class="row" *ngFor="let timeEntry of timesheetEntries">
+    <div class="col-md-6">
+        <span>{{timeEntry.description}}</span>
+    </div>
+    <div class="col-md-3">
+        <span>{{timeEntry?.project?.title}} - {{timeEntry?.project?.client?.name}}</span>
+    </div>
+    <div class="col-md-1">
+        <span>{{timeEntry.endTime - timeEntry.startTime | formatTimespan}}</span>
+    </div>
+    <div class="col-md-1">
+        <i class="fa fa-2x fa-play-circle" style="color: green"></i>
+    </div>
+</div>

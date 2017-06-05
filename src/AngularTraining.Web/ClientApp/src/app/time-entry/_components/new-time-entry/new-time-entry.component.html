@@ -1,3 +1,17 @@
-<p>
-  new-time-entry works!
-</p>
+<div class="row">
+    <div class="col-md-6">
+        <input type="text" [(ngModel)]="timesheetEntry.description" id="description" name="description" placeholder="Whatcha up to?" />
+    </div>
+    <div class="col-md-3">
+        <select [(ngModel)]="projectId" id="projectId" name="projectId">
+            <option value="0"></option>
+            <option *ngFor="let project of projects" value="{{project.id}}">{{project.title}} - {{project.client?.name}}</option>
+        </select>
+    </div>
+    <div class="col-md-1">
+        {{hours}}:{{minutes | number:'2.0-0'}}:{{seconds | number:'2.0-0'}}
+    </div>
+    <div class="col-md-1">
+        <i class="fa fa-2x" [ngClass]="timer == null ? 'fa-play-circle': 'fa-stop-circle'" [style.color]="timer == null ? 'green' : 'red'" (click)="toggleTimer()"></i>
+    </div>
+</div>
