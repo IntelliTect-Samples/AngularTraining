@@ -12,7 +12,9 @@ module.exports = {
     resolve: { extensions: ['.js', '.ts'] },
     module: {
         rules: [
-            { test: /\.ts$/, include: /ClientApp/, use: ['awesome-typescript-loader?silent=true', 'angular2-template-loader'] }
+            { test: /\.ts$/, include: /ClientApp/, use: ['awesome-typescript-loader?silent=true', 'angular2-template-loader'] },
+            { test: /\.html$/, include: /ClientApp/, use: ['html-loader?minimize=false'] },
+            { test: /\.css$/, use: ['to-string-loader', 'css-loader'] }
         ]
     },
     plugins: [
@@ -24,5 +26,10 @@ module.exports = {
             context: __dirname,
             manifest: require('./wwwroot/dist/vendor-manifest.json')
         })
-    ]
+    ].concat([
+        new webpack.SourceMapDevToolPlugin({
+            filename: '[file].map',
+            moduleFilenameTemplate: path.relative('./wwwroot/dist', '[resourcePath]')
+        })
+    ])
 };

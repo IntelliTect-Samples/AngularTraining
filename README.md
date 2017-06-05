@@ -1,76 +1,66 @@
-## Add Angular CLI, Bootstrap, and FontAwesome
+## Use Angular CLI to scaffold out major project elements
 
-Add package.json and add the following packages (with npm install <package> --save-dev):
-- @angular/cli
-- bootstrap
-- font-awesome
-- jquery
-- rimraf
+First, we need to delete the my-app component since that was just a place holder
 
-Also add the following packages that will be needed by webpack to support html templates, css files, and font files
-- css-loader
-- extract-text-webpack-plugin
-- file-loader
-- html-loader
-- to-string-loader
-- url-loader
-
-Create .angular-cli.json
+Next create the root TimeTrackerApp component
 ```
-{
-  "apps": [
-    {
-      "root": "ClientApp/src"
-    }
-  ],
-  defaults: {
-    component: {
-        spec: false
-    }
-  }
-}
+ng g component _components/TimeTrackerApp
 ```
 
-Modify webpack.config.vendor.js as follows
-- Add the following two declarations
+Update index.html to use time-tracker-app instead of main-app and also update the app.module and remove references to MainApp
+
+Update webpack.config.js to recognize new formats introduced (html and css files instead of just inline templates)
+- add the following rules for html and css
 ```
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const extractCSS = new ExtractTextPlugin('vendor.css');
+{ test: /\.html$/, include: /ClientApp/, use: ['html-loader?minimize=false'] },
+{ test: /\.css$/, use: ['to-string-loader', 'css-loader'] }
 ```
-- Modify vendor array
+- also since we will be doing more and more dev now, enable map files. Add the following to the end of the plugins array
 ```
-'bootstrap',
-'bootstrap/dist/css/bootstrap.css',
-'font-awesome/css/font-awesome.css',
-'jquery',
-```
-- Add a module section below the output section
-```
-module: {
-    rules: [
-        { test: /\.css(\?|$)/, use: extractCSS.extract({ use: 'css-loader' }) },
-        { test: /\.(png|woff|woff2|eot|ttf|svg)(\?|$)/, use: 'url-loader?limit=100000' }
-    ]
-},
-```
-- Add the following lines to the plugin section
-```
-new webpack.ProvidePlugin({ $: 'jquery', jQuery: 'jquery' }),
-extractCSS,
+.concat([
+    new webpack.SourceMapDevToolPlugin({
+        filename: '[file].map',
+        moduleFilenameTemplate: path.relative('./wwwroot/dist', '[resourcePath]')
+    })
+])
 ```
 
-Modify index.html to now take advantage of our new styling
-- Add a reference to the newly created vendor.css file
+This application is going to consist of the following modules
+- admin
+- login
+- nav-bar
+- time-entry
+
+Create each module using the following command
 ```
-<link href="dist/vendor.css" rel="stylesheet" />
+ng g module <ModuleName>
 ```
-- Modify the &lt;my-app&gt; directive to look like the following
+
+For each newly created module directory, create an _components directory
+
+Create a NavBar component under the NavBar module using the following command
 ```
-<div class="container">
-    <my-app><i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>Loading...</my-app>
+ng g component nav-bar/_components/NavBar
+```
+
+Create NewTimeEntry, TimeEntry, and TimeEntryList components under the TimeEntry module
+Modify time-entry.component.html to have a line for new-time-entry and time-entry-list
+```
+<new-time-entry></new-time-entry>
+<time-entry-list></time-entry-list>
+```
+
+Build out basic application structure without routing
+Inside of time-entry-app.component.html file add:
+```
+<nav-bar></nav-bar>
+<div class='container'>
+    <time-entry></time-entry>
 </div>
 ```
-Update the package.json file and modify the webpack script to be
-```
-"webpack": "rimraf wwwroot/dist/main-client.* && webpack",
-```
+
+Add the NavBarModule and TimeEntryModule to the main app.module
+
+Create index.ts files (barrels) for NavBar and TimeEntry modules
+
+Need to export NavBarComponent from NavBarModule and TimeEntryComponent from TimeEntryModule

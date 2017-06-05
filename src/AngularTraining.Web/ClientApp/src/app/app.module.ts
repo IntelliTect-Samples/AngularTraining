@@ -1,14 +1,18 @@
 ﻿import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { MyAppComponent } from './_components/my-app/my-app.component';
+import { TimeTrackerAppComponent } from './_components/time-tracker-app/time-tracker-app.component';
+import { NavBarModule } from './nav-bar';
+import { TimeEntryModule } from './time-entry';
 
 @NgModule({
     imports: [
-        BrowserModule
+        BrowserModule,
+        NavBarModule,
+        TimeEntryModule
     ],
-    bootstrap: [MyAppComponent],
+    bootstrap: [TimeTrackerAppComponent],
     declarations: [
-        MyAppComponent
+        TimeTrackerAppComponent
     ]
 })
 export class AppModule { }
