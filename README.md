@@ -1,287 +1,166 @@
-## Build out main Time Entry functionality
-
-Create _models directory under time-entry directory
-Create models for Client, Project, and TimesheetEntry using
+## Build out application navigation
+Add bootstrap styling for navigation to nav-bar.component.html
 ```
-ng g class time-entry/_models/<ModelName>
-```
-
-Open TimesheetEntry and add the following fields
-```
-id: number;
-description: string;
-project: Project;
-startTime: Date;
-endTime: Date;
-```
-Open Project and add the following fields
-```
-id: number;
-title: string;
-client: Client;
-```
-Open Client and add the following fields
-```
-id: number;
-name: string;
-```
-
-First, let's make it so we can display a list of hard coded project entries
-- Modify time-entry-list.component.html to look like the following
-  - notice the best practice of using the safe navigator operator (?.)
-```
-<div class="row" *ngFor="let timeEntry of timesheetEntries">
-    <div class="col-md-6">
-        <span>{{timeEntry.description}}</span>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand">Time Tracker</a>
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href='#'>Time Entry</a>
+                </li>
+                <li>
+                    <a href='#'>Admin</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a>FirstName LastName / Login</a>
+                </li>
+            </ul>
+        </div>
     </div>
-    <div class="col-md-3">
-        <span>{{timeEntry?.project?.title}} - {{timeEntry?.project?.client?.name}}</span>
-    </div>
-    <div class="col-md-1">
-        <span>{{timeSpan(timeEntry.startTime, timeEntry.endTime)}}</span>
-    </div>
-    <div class="col-md-1">
-        <i class="fa fa-2x fa-play-circle" style="color: green"></i>
-    </div>
-</div>
+</nav>
 ```
-Modify time-entry-list.component.ts to add the logic
-- add the timesheetEntries property and mark it as input since it needs to get passed in
+Modify index.html and add a style tag to put a margin-top of 60px since the navigation is using fixed-top
 ```
-@Input() timesheetEntries: TimesheetEntry[];
+<style>
+   body { margin-top: 60px; }
+</style>
 ```
-- add the timeSpan method to format the timespan correctly (this will later be converted to a pipe)
-```
-timeSpan(startTime: Date, endTime: Date) {
-    var timespan = endTime.valueOf() - startTime.valueOf();
+### Routing
+Create a _routes folder in the main app directory
 
-    var totalSeconds = timespan / 1000;
+Add a routes.ts file to that directory (here is where we will define our routes for the overall app)
+```
+import { Routes } from '@angular/router';
+import { TimeEntryComponent } from "../time-entry";
 
-    var hours = Math.floor(totalSeconds / 3600);
-    var minutes = Math.floor((totalSeconds - (3600 * hours)) / 60);
-    var seconds = Math.floor(totalSeconds - ((minutes * 60) + (3600 * hours)));
+export const appRoutes: Routes = [
+    { path: 'timeEntry', component: TimeEntryComponent },
+    { path: 'admin', loadChildren: '../admin/admin.module#AdminModule' },
+    { path: '', redirectTo: '/timeEntry', pathMatch: 'full' }
+]
+```
+Notice that @angular/router is reference and that hasn't been added yet, so need to add that via npm and added to the webpack.config.vendor.js file
+- In this instance, this is used purely to get intellisense for route definitions, but since we will need it later in this lesson, we may as well just add it now.
+Since we are directly referencing TimeEntryComponent, we need to add it to the time-entry barrel
+```
+export * from './_components/time-entry/time-entry.component';
+```
+Add the routing definitions to the app.module (this goes in the imports array, but is defined as RouterModule.forRoot(&lt;routeDefintion&gt;)
+```
+RouterModule.forRoot(appRoutes)
+```
+Routing relies on knowing what the base href is for the website, so need to add that tag into the head of the index.html file
 
-    return `${hours}:${minutes > 9 ? "" + minutes : "0" + minutes}:${seconds > 9 ? "" + seconds : "0" + seconds}`;
-}
+Running the application now will make it look like it is working, but if the developer tools get opened, there will be an error in the console saying it "Cannot find primary outlet to load TimeEntryComponent"
+- Replace &lt;time-entry&gt; in time-entry-app.component.html with &lt;router-outlet&gt;
+     - this gets the app working to the point where we were before, but would be nice to have navigation light up with active link
+     - also, try pressing the refresh button right now on the browser, things should end up breaking
+Update the startup.cs file so that we can route correctly. What's happening is aspnet core is only serving up files from the root directory, but now we are trying to hit /timeEntry
 ```
-Add dummy data to time-entry.component.ts so there is something to be added to the time-entry-list
-- create timesheetEntries property on TimeEntryComponent
-- populate it with data in the ngOnInit function (this will later be replaced with data coming from an api, which is why we are not putting it in the constructor - utilizing the OnInit lifetime cycle event)
-```
-ngOnInit() {
-    this.timesheetEntries = [
-        {
-            id: 1, description: "Working on Angular Training", startTime: new Date('5/30/2017 8:00:00'), endTime: new Date('5/30/2017 14:15:00'),
-            project: {
-                id: 1, title: 'Angular Training',
-                client: {
-                    id: 1, name: 'Contoso, Inc'
-                }
-            }
-        },
-        {
-            id: 2, description: "Working on Angular Training", startTime: new Date('5/30/2017 10:00'), endTime: new Date('5/30/2017 12:00'),
-            project: {
-                id: 1, title: 'Angular Training',
-                client: {
-                    id: 1, name: 'Contoso, Inc'
-                }
-            }
-        },
-        {
-            id: 3, description: "Biztalking my brains out", startTime: new Date('5/30/2017 10:00'), endTime: new Date('5/30/2017 12:00'),
-            project: {
-                id: 2, title: 'Biztalk',
-                client: {
-                    id: 2, name: 'AdventureWorks'
-                }
-            }
-        }
-    ];
-}
-```
-Modify time-entry.component.html to pass timesheetEntries to time-entry-list
-```
-<time-entry-list [timesheetEntries]="timesheetEntries"></time-entry-list>
-```
+app.Use(async (context, next) =>
+{
+    await next();
 
-Now let's build out the piece to actually allow us to add new time entries
-Open new-time-entry.component.html file and add the following html
+    if (context.Response.StatusCode == 404 &&
+    !Path.HasExtension(context.Request.Path.Value) &&
+    !context.Request.Path.Value.StartsWith("/api/"))
+    {
+        context.Request.Path = "/index.html";
+        context.Response.StatusCode = 200;
+        await next();
+    }
+});
 ```
-<div class="row">
-    <div class="col-md-6">
-        <input type="text" [(ngModel)]="timesheetEntry.description" id="description" name="description" placeholder="Whatcha up to?" />
-    </div>
-    <div class="col-md-3">
-        <input type="text" [(ngModel)]="timesheetEntry.project" id="project" name="project" placeholder="+ Project" />
-    </div>
-    <div class="col-md-1">
-        {{hours}}:{{minutes | number:'2.0-0'}}:{{seconds | number:'2.0-0'}}
-    </div>
-    <div class="col-md-1">
-        <i class="fa fa-2x" [ngClass]="timer == null ? 'fa-play-circle': 'fa-stop-circle'" [style.color]="timer == null ? 'green' : 'red'" (click)="toggleTimer()"></i>
-    </div>
-</div>
+This fixes the /timeEntry issue, but now someone types in a bogus url, the site just looks broken (a routing error is thrown if looking in developer tools)
+- create an errors folder in the app/_components directory and create a 404.component.ts file in there
 ```
+import { Component } from '@angular/core'
 
-Now that we are using ngModel, we need to add @angular/forms to npm, add it to the webpack.config.vendor.js file and then reference the FormsModule from the time-entry.module
-```
-npm install @angular/forms --save-dev
-```
-
-Modify the new-time-entry.component.ts file as follows
-- Add @Input for timesheetEntry
-- Create the following fields that will be needed for keeping track of time
-```
-@Input() timesheetEntry: TimesheetEntry;
-description: string;
-project: Project;
-totalSeconds: number;
-seconds: number;
-minutes: number;
-hours: number;
-timer: number;
-```
-- Update the constructor to initialize the new properties
-```
-constructor() {
-    this.totalSeconds = 0;
-    this.timer = null;
-    this.hours = 0;
-    this.minutes = 0;
-    this.seconds = 0;
-}
-```
-- Update the code in ngOnInit to check and see if a timesheetEntry was passed in. If one wasn't, then create a new instance
-```
-ngOnInit() {
-    if (this.timesheetEntry == null) {
-        this.timesheetEntry = new TimesheetEntry();
+@Component({
+    template: `
+    <h1 class="errorMessage">404'd</h1>
+  `,
+    styles: [`
+    .errorMessage { 
+      margin-top:150px; 
+      font-size: 170px;
+      text-align: center; 
+    }`]
+})
+export class Error404Component {
+    constructor() {
     }
 }
 ```
-- implement the toggleTimer method
-    - if there is a timer object, then we need to stop the timer and set things back to default values and save off the timesheetEntry item
-    - else need to start a new timer
+- add a catchall route at the end of routes.ts and route it to the 404 component
 ```
-toggleTimer() {
-    if (this.timer) {
-        // stop timer
-        clearInterval(this.timer);
-        this.timer = null;
-        this.hours = 0;
-        this.minutes = 0;
-        this.seconds = 0;
-        this.totalSeconds = 0;
-        // update endTime
-        this.timesheetEntry.endTime = new Date();
-        console.log(this.timesheetEntry);
-        // create new entry again
-        this.timesheetEntry = new TimesheetEntry();
-    }
-    else {
-        // set startTime
-        this.timesheetEntry.startTime = new Date();
-        // start timer
-        this.timer = +setInterval(() => {
-            this.totalSeconds++;
+{ path: '**', component: Error404Component }
+```
+### Controlling Navigation
+With routing configured, now it is time to hook up navigation and active links
 
-            this.hours = Math.floor(this.totalSeconds / 3600);
-            this.minutes = Math.floor((this.totalSeconds - (3600 * this.hours)) / 60);
-            this.seconds = Math.floor(this.totalSeconds - ((this.minutes * 60) + (3600 * this.hours)));
+Navigation is controlled using [routerLink]
+- can be a one time binding if the string is static, or can be a template expression which accepts an array of values that get appended to each other.
+Showing which link is active is done with the RouterLinkActive directive. This adds the active class to the a element when the route is matched.
 
-        }, 1000);
-    }
-}
+Modify nav-bar.component.html so that is contains the necessary routerLink and routerLinkActive directives
 ```
-- Update toggleTimer to publish newly created timesheetEntry back to parent component
-  - create new EventEmitter property and designate it as an @Output()
-  - emit createEvent instead of logging to console
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" [routerLink]="['/']" routerLinkActive="active">Time Tracker</a>
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a [routerLink]="['/timeEntry']" routerLinkActive="active">Time Entry</a>
+                </li>
+                <li>
+                    <a [routerLink]="['/admin', 'manageUsers']" routerLinkActive="active">Admin</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a>Login</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
 ```
-@Output() createEntry = new EventEmitter();
-...
-toggleTimer() {
-   if (this.timer) {
-      ...
-      this.createEntry.emit(this.timesheetEntry);
-      ...
-   }
-}
-```
-- Update time-entry.component.html to listen for createEntry event
-  - note that the parameter for the event is a generic $event parameter. It must be this
-```
-<new-time-entry [timesheetEntry]="timesheetEntry" (createEntry)="saveEntry($event)"></new-time-entry>
-```
-- Implement saveEntry on time-entry.component.ts. Notice here the parameter is strongly typed and named whatever makes sense to the implementer
-```
-saveEntry(entry: TimesheetEntry) {
-    this.timesheetEntries.splice(0, 0, entry);
-}
-```
-- Hook up Project
-  - Create projects array in new-time-entry.component.ts
-  - Add a new projectId variable to bind the selected value to
-  - *ngFor on the projects array to get the list of options for new-time-entry.component.html
-  - when saving off, get the appropriate project from the projects array based on the projectId and set that to the timesheetEntry.project
-```
-...
-projects: Project[];
-projectId: number;
+Also, since routerLink and routerLinkActive are being used in nav-bar, the RouterModule needs to be added to the nav-bar.module file
 
-...
-ngOnInit() {
-    ...
-    this.projects = [
-        {
-            id: 1,
-            title: 'Angular Training',
-            client: {
-                id: 1,
-                name: 'Contoso, Inc'
-            }
-        },
-        {
-            id: 2,
-            title: 'Biztalk',
-            client: {
-                id: 2,
-                name: 'AdventureWorks'
-            }
-        }
-    ]
-}
-...
-toggleTimer() {
-    if (this.timer) {
-        ...
-        this.timesheetEntry.project = this.projects.find(project => project.id === +this.projectId);
-        this.projectId = 0;
-    }
-}
+Finally, add some styling to nav-bar.component.css so that the li > a.active color is different.
+### Lazy Loading Modules/Routes
+- Install angular-router-loader so that webpack will pick up the lazy loaded route(s) and add it as the last entry for the typescript rule in webpack.config.js
+- Create a _components directory under the admin folder
+- Add a ManageUsers and CreateUser component
+- Create _routes directory under the admin folder and add a routes.ts file to that folder
 ```
-```
-<select [(ngModel)]="projectId" id="projectId" name="projectId">
-    <option value="0"></option>
-    <option *ngFor="let project of projects" value="{{project.id}}">{{project.title}} - {{project.client?.name}}</option>
-</select>
-```
-Cleanup original time-entry-list code and use a custom pipe for displaying the timespan instead of function on the component
-- create _pipes folder under time-entry directory
-- use angular cli to generate stub for pipe (delete spec file that was generated)
-- update transform method with logic from timeSpan method in time-entry-list.component.ts
-```
-transform(value: number): string {
-    var totalSeconds = value / 1000;
+import { Routes } from "@angular/router";
+import { ManageUsersComponent } from "../_components/manage-users/manage-users.component";
+import { CreateUserComponent } from "../_components/create-user/create-user.component";
 
-    var hours = Math.floor(totalSeconds / 3600);
-    var minutes = Math.floor((totalSeconds - (3600 * hours)) / 60);
-    var seconds = Math.floor(totalSeconds - ((minutes * 60) + (3600 * hours)));
-
-    return `${hours}:${minutes > 9 ? "" + minutes : "0" + minutes}:${seconds > 9 ? "" + seconds : "0" + seconds}`;
-}
+export const adminRoutes: Routes = [
+    {path: 'manageUsers', component: ManageUsersComponent},
+    {path: 'create', component: CreateUserComponent}
+]
 ```
-- update time-entry-list.component.html to use new pipe
-```
-<span>{{timeEntry.endTime - timeEntry.startTime | formatTimespan}}</span>
-```
+- Add new adminRoutes to admin.module using RouterModule.forChild

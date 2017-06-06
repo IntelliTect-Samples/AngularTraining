@@ -13,6 +13,7 @@ module.exports = {
             '@angular/forms',
             '@angular/platform-browser',
             '@angular/platform-browser-dynamic',
+            '@angular/router',
             'bootstrap',
             'bootstrap/dist/css/bootstrap.css',
             'font-awesome/css/font-awesome.css',

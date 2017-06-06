@@ -12,7 +12,7 @@ module.exports = {
     resolve: { extensions: ['.js', '.ts'] },
     module: {
         rules: [
-            { test: /\.ts$/, include: /ClientApp/, use: ['awesome-typescript-loader?silent=true', 'angular2-template-loader'] },
+            { test: /\.ts$/, include: /ClientApp/, use: ['awesome-typescript-loader?silent=true', 'angular2-template-loader', 'angular-router-loader'] },
             { test: /\.html$/, include: /ClientApp/, use: ['html-loader?minimize=false'] },
             { test: /\.css$/, use: ['to-string-loader', 'css-loader'] }
         ]
