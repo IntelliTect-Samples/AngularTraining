@@ -345,12 +345,12 @@ Implement login.component.html
     <form name="form" (ngSubmit)="loginForm.form.valid && login(loginForm.value)" #loginForm="ngForm" novalidate>
         <div class="form-group" [ngClass]="{ 'has-error': loginForm.submitted && !loginForm.controls.username?.valid }">
             <label for="username">Username</label>
-            <input type="text" class="form-control" name="username" required />
+            <input type="text" class="form-control" (ngModel)="username" name="username" required />
             <div *ngIf="loginForm.submitted && !loginForm.controls.username?.valid" class="help-block">Username is required</div>
         </div>
         <div class="form-group" [ngClass]="{ 'has-error': loginForm.submitted && !loginForm.controls.password?.valid }">
             <label for="password">Password</label>
-            <input type="password" class="form-control" name="password" required />
+            <input type="password" class="form-control" (ngModel)="password" name="password" required />
             <div *ngIf="loginForm.submitted && !loginForm.controls.password?.valid" class="help-block">Password is required</div>
         </div>
         <div class="form-group">
