@@ -15,12 +15,13 @@
                     <a [routerLink]="['/timeEntry']" routerLinkActive="active">Time Entry</a>
                 </li>
                 <li>
-                    <a [routerLink]="['/admin', 'manageUsers']" routerLinkActive="active">Admin</a>
+                    <a *ngIf="authService.isAuthenticated() && authService.currentUser.role == 'Administrator'" [routerLink]="['/admin', 'manageUsers']" routerLinkActive="active">Admin</a>
                 </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>
-                    <a>Login</a>
+                    <a *ngIf="authService.isAuthenticated(); else login" style="cursor:pointer" (click)="logout()">{{authService.currentUser.firstName}} {{authService.currentUser.lastName}}</a>
+                    <ng-template #login><a routerLink="user/login" routerLinkActive="active">Login</a></ng-template>
                 </li>
             </ul>
         </div>

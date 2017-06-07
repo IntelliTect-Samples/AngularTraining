@@ -1,166 +1,518 @@
-## Build out application navigation
-Add bootstrap styling for navigation to nav-bar.component.html
-```
-<nav class="navbar navbar-inverse navbar-fixed-top">
-    <div class="container">
-        <div class="navbar-header">
-            <a class="navbar-brand">Time Tracker</a>
-            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-        </div>
-        <div class="navbar-collapse collapse" id="navbar">
-            <ul class="nav navbar-nav">
-                <li>
-                    <a href='#'>Time Entry</a>
-                </li>
-                <li>
-                    <a href='#'>Admin</a>
-                </li>
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                <li>
-                    <a>FirstName LastName / Login</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
-```
-Modify index.html and add a style tag to put a margin-top of 60px since the navigation is using fixed-top
-```
-<style>
-   body { margin-top: 60px; }
-</style>
-```
-### Routing
-Create a _routes folder in the main app directory
+## Add Authentication and Authorization
+Add AngularTraining.Domain project
+- should just pull from github repo, not much to explain on this one
 
-Add a routes.ts file to that directory (here is where we will define our routes for the overall app)
+Create a NuGet.config file at the solution level
 ```
-import { Routes } from '@angular/router';
-import { TimeEntryComponent } from "../time-entry";
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+    <add key="aspnet-contrib" value="https://www.myget.org/F/aspnet-contrib/api/v3/index.json" />
+  </packageSources>
+</configuration>
+```
+Close solution and re-open it so that the nuget.config file takes effect.
 
-export const appRoutes: Routes = [
-    { path: 'timeEntry', component: TimeEntryComponent },
-    { path: 'admin', loadChildren: '../admin/admin.module#AdminModule' },
-    { path: '', redirectTo: '/timeEntry', pathMatch: 'full' }
-]
-```
-Notice that @angular/router is reference and that hasn't been added yet, so need to add that via npm and added to the webpack.config.vendor.js file
-- In this instance, this is used purely to get intellisense for route definitions, but since we will need it later in this lesson, we may as well just add it now.
-Since we are directly referencing TimeEntryComponent, we need to add it to the time-entry barrel
-```
-export * from './_components/time-entry/time-entry.component';
-```
-Add the routing definitions to the app.module (this goes in the imports array, but is defined as RouterModule.forRoot(&lt;routeDefintion&gt;)
-```
-RouterModule.forRoot(appRoutes)
-```
-Routing relies on knowing what the base href is for the website, so need to add that tag into the head of the index.html file
+Add AngularTraining.Domain as a reference in AngularTraining.Web project
 
-Running the application now will make it look like it is working, but if the developer tools get opened, there will be an error in the console saying it "Cannot find primary outlet to load TimeEntryComponent"
-- Replace &lt;time-entry&gt; in time-entry-app.component.html with &lt;router-outlet&gt;
-     - this gets the app working to the point where we were before, but would be nice to have navigation light up with active link
-     - also, try pressing the refresh button right now on the browser, things should end up breaking
-Update the startup.cs file so that we can route correctly. What's happening is aspnet core is only serving up files from the root directory, but now we are trying to hit /timeEntry
+Add following dependencies to AngularTraining.Web project
 ```
-app.Use(async (context, next) =>
+<PackageReference Include="Microsoft.AspNetCore.Mvc" Version="1.1.3" />
+<PackageReference Include="AspNet.Security.OAuth.Validation" Version="1.0.0" />
+<PackageReference Include="OpenIddict" Version="1.0.0-*" />
+<PackageReference Include="OpenIddict.EntityFrameworkCore" Version="1.0.0-*" />
+<PackageReference Include="OpenIddict.Mvc" Version="1.0.0-*" />
+<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="1.1.2" />
+<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Design" Version="1.1.2" />
+<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="1.1.1" />
+<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="1.1.2" />
+<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="1.1.2" />
+```
+Modifications to startup.cs
+- Add configuration population
+```
+public IConfigurationRoot Configuration { get; }
+public Startup(IHostingEnvironment env)
 {
-    await next();
+    var builder = new ConfigurationBuilder()
+        .SetBasePath(env.ContentRootPath)
+        .AddJsonFile("appsettings.json", optional: false)
+        .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
 
-    if (context.Response.StatusCode == 404 &&
-    !Path.HasExtension(context.Request.Path.Value) &&
-    !context.Request.Path.Value.StartsWith("/api/"))
+    builder.AddEnvironmentVariables();
+    Configuration = builder.Build();
+}
+```
+- Add Db info, Identity requirements, configure OpenIddict, and add MVC services
+```
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddDbContext<ApplicationDbContext>(options =>
     {
-        context.Request.Path = "/index.html";
-        context.Response.StatusCode = 200;
-        await next();
-    }
-});
-```
-This fixes the /timeEntry issue, but now someone types in a bogus url, the site just looks broken (a routing error is thrown if looking in developer tools)
-- create an errors folder in the app/_components directory and create a 404.component.ts file in there
-```
-import { Component } from '@angular/core'
+        options.UseSqlite(Configuration.GetConnectionString("DefaultConnection"));
+        options.UseOpenIddict<int>();
+    });
 
-@Component({
-    template: `
-    <h1 class="errorMessage">404'd</h1>
-  `,
-    styles: [`
-    .errorMessage { 
-      margin-top:150px; 
-      font-size: 170px;
-      text-align: center; 
-    }`]
-})
-export class Error404Component {
-    constructor() {
+    services.AddIdentity<User, Role>(o =>
+    {
+        o.Password.RequireDigit = false;
+        o.Password.RequiredLength = 6;
+        o.Password.RequireLowercase = false;
+        o.Password.RequireNonAlphanumeric = false;
+        o.Password.RequireUppercase = false;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext, int>()
+    .AddDefaultTokenProviders();
+
+    services.Configure<IdentityOptions>(options =>
+    {
+        options.ClaimsIdentity.UserNameClaimType = OpenIdConnectConstants.Claims.Name;
+        options.ClaimsIdentity.UserIdClaimType = OpenIdConnectConstants.Claims.Subject;
+        options.ClaimsIdentity.RoleClaimType = OpenIdConnectConstants.Claims.Role;
+    });
+
+    services.AddOpenIddict<int>(options =>
+    {
+        options.AddEntityFrameworkCoreStores<ApplicationDbContext>();
+        options.AddMvcBinders();
+        options.EnableTokenEndpoint("/connect/token");
+        options.AllowPasswordFlow();
+        options.DisableHttpsRequirement();
+    });
+
+    services.AddMvc();
+}
+```
+- Configure identity, OpenIddict and MVC in pipeline and make call to initialized database
+```
+public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+{
+...
+app.UseIdentity();
+app.UseOAuthValidation();
+...
+app.UseOpenIddict();
+app.UseMvc();
+InitializeData.Initialize(app.ApplicationServices, loggerFactory);
+}
+```
+- Add appsettings.json file
+```
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=TimeTracker.sqlite"
+  }
+}
+```
+- Create migrations (if it doesn't already exist)
+    - Open Package Manager Console
+    - Switch to AngularTraining.Domain project
+    - type "Add-Migration InitialDb"
+
+Add AuthorizationController
+```
+public class AuthorizationController : Controller
+{
+    public IOptions<IdentityOptions> IdentityOptions { get; }
+    public SignInManager<User> SignInManager { get; }
+    public UserManager<User> UserManager { get; }
+    public AuthorizationController(
+        IOptions<IdentityOptions> identityOptions,
+        SignInManager<User> signInManager,
+        UserManager<User> userManager)
+    {
+        IdentityOptions = identityOptions;
+        SignInManager = signInManager;
+        UserManager = userManager;
+    }
+
+    [HttpPost("~/connect/token"), Produces("application/json")]
+    public async Task<IActionResult> Exchange(OpenIdConnectRequest request)
+    {
+        if (request.IsPasswordGrantType())
+        {
+            var user = await UserManager.FindByEmailAsync(request.Username);
+            if (user == null)
+            {
+                return BadRequest(new OpenIdConnectResponse
+                {
+                    Error = OpenIdConnectConstants.Errors.InvalidGrant,
+                    ErrorDescription = "The username/password is invalid."
+                });
+            }
+
+            if (!await SignInManager.CanSignInAsync(user))
+            {
+                return BadRequest(new OpenIdConnectResponse
+                {
+                    Error = OpenIdConnectConstants.Errors.InvalidGrant,
+                    ErrorDescription = "The specified user is not allowed to sign in."
+                });
+            }
+
+            if (!await UserManager.CheckPasswordAsync(user, request.Password))
+            {
+                return BadRequest(new OpenIdConnectResponse
+                {
+                    Error = OpenIdConnectConstants.Errors.InvalidGrant,
+                    ErrorDescription = "The username/password is invalid."
+                });
+            }
+
+            // if we got this far, we have a valid user who was able to login
+
+            var ticket = await CreateTicketAsync(request, user);
+            return SignIn(ticket.Principal, ticket.Properties, ticket.AuthenticationScheme);
+        }
+
+        throw new InvalidOperationException("The specified grant type is not supported.");
+    }
+
+    private async Task<AuthenticationTicket> CreateTicketAsync(OpenIdConnectRequest request, User user)
+    {
+        // Create a new ClaimsPrincipal containing the claims that
+        // will be used to create an id_token, a token or a code.
+        var principal = await SignInManager.CreateUserPrincipalAsync(user);
+
+        ((ClaimsIdentity)principal.Identity).AddClaim(new Claim(OpenIdConnectConstants.Claims.FamilyName, user.LastName));
+        ((ClaimsIdentity)principal.Identity).AddClaim(new Claim(OpenIdConnectConstants.Claims.GivenName, user.FirstName));
+
+        // Create a new authentication ticket holding the user identity.
+        var ticket = new AuthenticationTicket(principal,
+            new AuthenticationProperties(),
+            OpenIdConnectServerDefaults.AuthenticationScheme);
+
+        // Set the list of scopes granted to the client application.
+        ticket.SetScopes(new[]
+        {
+            OpenIdConnectConstants.Scopes.OpenId,
+            OpenIdConnectConstants.Scopes.Email,
+            OpenIdConnectConstants.Scopes.Profile,
+            OpenIddictConstants.Scopes.Roles
+        }.Intersect(request.GetScopes()));
+
+        ticket.SetResources("resource-server");
+
+        // Note: by default, claims are NOT automatically included in the access and identity tokens.
+        // To allow OpenIddict to serialize them, you must attach them a destination, that specifies
+        // whether they should be included in access tokens, in identity tokens or in both.
+
+        foreach (var claim in ticket.Principal.Claims)
+        {
+            // Never include the security stamp in the access and identity tokens, as it's a secret value.
+            if (claim.Type == IdentityOptions.Value.ClaimsIdentity.SecurityStampClaimType)
+            {
+                continue;
+            }
+
+            var destinations = new List<string>
+            {
+                OpenIdConnectConstants.Destinations.AccessToken
+            };
+
+            // Only add the iterated claim to the id_token if the corresponding scope was granted to the client application.
+            // The other claims will only be added to the access_token, which is encrypted when using the default format.
+            if ((claim.Type == OpenIdConnectConstants.Claims.Name && ticket.HasScope(OpenIdConnectConstants.Scopes.Profile)) ||
+                (claim.Type == OpenIdConnectConstants.Claims.FamilyName && ticket.HasScope(OpenIdConnectConstants.Scopes.Profile)) ||
+                (claim.Type == OpenIdConnectConstants.Claims.GivenName && ticket.HasScope(OpenIdConnectConstants.Scopes.Profile)) ||
+                (claim.Type == OpenIdConnectConstants.Claims.Email && ticket.HasScope(OpenIdConnectConstants.Scopes.Email)) ||
+                (claim.Type == OpenIdConnectConstants.Claims.Role && ticket.HasScope(OpenIddictConstants.Claims.Roles)))
+            {
+                destinations.Add(OpenIdConnectConstants.Destinations.IdentityToken);
+            }
+
+            claim.SetDestinations(destinations);
+        }
+
+        return ticket;
     }
 }
 ```
-- add a catchall route at the end of routes.ts and route it to the 404 component
+Add _services and _models folder to main app
+Create Authentication service
 ```
-{ path: '**', component: Error404Component }
+ng g service _services/Authentication
 ```
-### Controlling Navigation
-With routing configured, now it is time to hook up navigation and active links
+Create User model
+```
+ng g class _models/User
+```
+Add fields to User class
+```
+export class User {
+    firstName: string;
+    lastName: string;
+    role: string;
+}
+```
 
-Navigation is controlled using [routerLink]
-- can be a one time binding if the string is static, or can be a template expression which accepts an array of values that get appended to each other.
-Showing which link is active is done with the RouterLinkActive directive. This adds the active class to the a element when the route is matched.
+Add AuthenticationService to list of providers for app.module
 
-Modify nav-bar.component.html so that is contains the necessary routerLink and routerLinkActive directives
+install @angular/http and angular2-jwt via npm and add to webpack.config.vendor.js file.
+Also add HttpModule to list of imports in app.module
+
+Implement AuthenticationService
 ```
-<nav class="navbar navbar-inverse navbar-fixed-top">
-    <div class="container">
-        <div class="navbar-header">
-            <a class="navbar-brand" [routerLink]="['/']" routerLinkActive="active">Time Tracker</a>
-            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-        </div>
-        <div class="navbar-collapse collapse" id="navbar">
-            <ul class="nav navbar-nav">
-                <li>
-                    <a [routerLink]="['/timeEntry']" routerLinkActive="active">Time Entry</a>
-                </li>
-                <li>
-                    <a [routerLink]="['/admin', 'manageUsers']" routerLinkActive="active">Admin</a>
-                </li>
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                <li>
-                    <a>Login</a>
-                </li>
-            </ul>
-        </div>
+import { Injectable } from "@angular/core";
+import { Http, Headers, Response, RequestOptions } from '@angular/http';
+import { Observable } from "rxjs";
+import 'rxjs/add/operator/map';
+import { JwtHelper } from 'angular2-jwt';
+import { User } from "../_models/user";
+
+@Injectable()
+export class AuthenticationService {
+    access_token: string;
+    currentUser: User;
+    private jwtHelper: JwtHelper = new JwtHelper();
+
+    constructor(private http: Http) {
+        var existingUser = JSON.parse(localStorage.getItem('currentUser'));
+        this.access_token = existingUser && existingUser.access_token;
+        if (existingUser && existingUser.id_token) {
+            this.currentUser = new User();
+            this.currentUser.firstName = this.jwtHelper.decodeToken(existingUser.id_token).given_name;
+            this.currentUser.lastName = this.jwtHelper.decodeToken(existingUser.id_token).family_name;
+            this.currentUser.role = this.jwtHelper.decodeToken(existingUser.id_token).role;
+        }
+    }
+
+    isAuthenticated() {
+        return !!this.currentUser;
+    }
+
+    login(username: string, password: string): Observable<boolean> {
+        let headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
+        let options = new RequestOptions({ headers: headers });
+        let creds = `grant_type=password&username=${username}&password=${password}&scope=openid profile roles`;
+
+        return this.http.post('/connect/token', creds, options)
+            .map((response: Response) => {
+                let access_token = response.json() && response.json().access_token;
+                let id_token = response.json() && response.json().id_token;
+
+                if (access_token && id_token) {
+                    this.access_token = access_token;
+
+                    localStorage.setItem('currentUser', JSON.stringify({ username: username, access_token: access_token, id_token: id_token }));
+
+                    this.currentUser = new User();
+                    this.currentUser.firstName = this.jwtHelper.decodeToken(id_token).given_name;
+                    this.currentUser.lastName = this.jwtHelper.decodeToken(id_token).family_name;
+                    this.currentUser.role = this.jwtHelper.decodeToken(id_token).role;
+
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            })
+            .catch((err: Response | any) => {
+                console.log(err);
+                return Observable.throw(false);
+            });
+    }
+
+    logout(): void {
+        this.access_token = null;
+        this.currentUser = null;
+        localStorage.removeItem('currentUser');
+    }
+}
+```
+Modify _routes.ts in app directory
+```
+...
+{ path: 'user', loadChildren: '../login/login.module#LoginModule' },
+...
+```
+
+Add _components folder to login folder
+
+Create login component
+```
+ng g component login/_components/Login
+```
+Implement login.component.html
+```
+<div class="col-md-6 col-md-offset-3">
+    <div class="alert alert-info">
+        Username: admin@timetracker.com<br />
+        Password: P@ssword
     </div>
-</nav>
+    <h2>Login</h2>
+    <form name="form" (ngSubmit)="loginForm.form.valid && login(loginForm.value)" #loginForm="ngForm" novalidate>
+        <div class="form-group" [ngClass]="{ 'has-error': loginForm.submitted && !loginForm.controls.username?.valid }">
+            <label for="username">Username</label>
+            <input type="text" class="form-control" name="username" required />
+            <div *ngIf="loginForm.submitted && !loginForm.controls.username?.valid" class="help-block">Username is required</div>
+        </div>
+        <div class="form-group" [ngClass]="{ 'has-error': loginForm.submitted && !loginForm.controls.password?.valid }">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" name="password" required />
+            <div *ngIf="loginForm.submitted && !loginForm.controls.password?.valid" class="help-block">Password is required</div>
+        </div>
+        <div class="form-group">
+            <button [disabled]="loading" class="btn btn-primary">Login</button>
+            <img *ngIf="loading" src="data:image/gif;base64,R0lGODlhEAAQAPIAAP///wAAAMLCwkJCQgAAAGJiYoKCgpKSkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==" />
+        </div>
+        <div *ngIf="error" class="alert alert-danger">{{error}}</div>
+    </form>
+</div>
 ```
-Also, since routerLink and routerLinkActive are being used in nav-bar, the RouterModule needs to be added to the nav-bar.module file
+Implement login.component.ts
+```
+import { Component, OnInit } from '@angular/core';
+import { Router } from "@angular/router";
+import { AuthenticationService } from "../../../_services/authentication.service";
 
-Finally, add some styling to nav-bar.component.css so that the li > a.active color is different.
-### Lazy Loading Modules/Routes
-- Install angular-router-loader so that webpack will pick up the lazy loaded route(s) and add it as the last entry for the typescript rule in webpack.config.js
-- Create a _components directory under the admin folder
-- Add a ManageUsers and CreateUser component
-- Create _routes directory under the admin folder and add a routes.ts file to that folder
+@Component({
+    selector: 'login',
+    templateUrl: './login.component.html',
+    styleUrls: ['./login.component.css']
+})
+export class LoginComponent implements OnInit {
+    loading = false;
+    error = '';
+    returnUrl: string;
+
+    constructor(
+        private router: Router,
+        private authenticationService: AuthenticationService,
+        private activatedRoute: ActivatedRoute) { }
+
+    ngOnInit() {
+        this.authenticationService.logout();
+        // get return url from route parameters or default to '/'
+        this.returnUrl = this.activatedRoute.snapshot.queryParams['returnUrl'] || '/';
+    }
+
+    login(formValues: any) {
+        this.loading = true;
+        this.authenticationService.login(formValues.username, formValues.password)
+            .subscribe(result => {
+                if (result == true) {
+                    this.router.navigateByUrl(this.returnUrl);
+                }
+                else {
+                    this.error = 'Username or password is incorrect';
+                    this.loading = false;
+                }
+            }, error => {
+                this.error = 'Username or password is incorrect';
+                this.loading = false;
+            });
+    }
+}
+```
+Implement login.component.css
+```
+.help-block {
+    font-size: 12px;
+}
+```
+Add _routes directory to login folder
+
+Create routes.ts
 ```
 import { Routes } from "@angular/router";
-import { ManageUsersComponent } from "../_components/manage-users/manage-users.component";
-import { CreateUserComponent } from "../_components/create-user/create-user.component";
+import { LoginComponent } from "../_components/login/login.component";
 
-export const adminRoutes: Routes = [
-    {path: 'manageUsers', component: ManageUsersComponent},
-    {path: 'create', component: CreateUserComponent}
+export const loginRoutes: Routes = [
+    { path: 'login', component: LoginComponent },
 ]
 ```
-- Add new adminRoutes to admin.module using RouterModule.forChild
+Update nav-bar.component.html
+```
+...
+<a *ngIf="authService.isAuthenticated() && authService.currentUser.role == 'Administrator'" [routerLink]="['/admin', 'manageUsers']" routerLinkActive="active">Admin</a>
+...
+<a *ngIf="authService.isAuthenticated(); else login" style="cursor:pointer" (click)="authService.logout()">{{authService.currentUser.firstName}} {{authService.currentUser.lastName}}</a>
+<ng-template #login><a routerLink="user/login" routerLinkActive="active">Login</a></ng-template>
+```
+Update nav-bar.component.ts
+```
+import { AuthenticationService } from "../../../_services/authentication.service";
+...
+constructor(private authService: AuthenticationService) { }
+```
+### Add guard to admin/manageUsers
+Add AdminActivatorService and AuthActivatedService to _services in main app folder
+```
+ng g service _services/AdminActivator
+ng g service _services/AuthActivator
+```
+Implement AdminActivator
+```
+import { Injectable } from '@angular/core';
+import { AuthenticationService } from "./authentication.service";
+import { Router, CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
+
+@Injectable()
+export class AdminActivatorService implements CanActivate {
+
+    constructor(private authService: AuthenticationService, private router: Router) { }
+
+    canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
+        let canPass = false;
+        if (!this.authService.isAuthenticated()) {
+            this.router.navigate(['/user/login'], { queryParams: { returnUrl: state.url } });
+        }
+        else if (this.authService.currentUser.role !== 'Administrator') {
+            this.router.navigate(['/']);
+        }
+        else {
+            canPass = true;
+        }
+
+        return canPass;
+    }
+}
+```
+Implement AuthActivator
+```
+import { Injectable } from '@angular/core';
+import { AuthenticationService } from "./authentication.service";
+import { Router, CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
+
+@Injectable()
+export class AuthActivatorService implements CanActivate {
+
+    constructor(private authService: AuthenticationService, private router: Router) { }
+
+    canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
+        let canPass = false;
+        if (!this.authService.isAuthenticated()) {
+            this.router.navigate(['/user/login'], { queryParams: { returnUrl: state.url } });
+        }
+        else {
+            canPass = true;
+        }
+
+        return canPass;
+    }
+}
+```
+Create empty HomeComponent in app/_components
+```
+ng g component _components/Home
+```
+
+Update app/_routes/routes.ts to add the guards and to navigate to the home page when browsing to '/'
+```
+import { Routes } from '@angular/router';
+import { TimeEntryComponent } from "../time-entry";
+import { Error404Component } from "../_components/errors/404.component";
+import { AuthActivatorService } from '../_services/auth-activator.service';
+import { AdminActivatorService } from "../_services/admin-activator.service";
+import { HomeComponent } from "../home/home.component";
+
+export const appRoutes: Routes = [
+    { path: 'timeEntry', component: TimeEntryComponent, canActivate: [AuthActivatorService] },
+    { path: 'admin', loadChildren: '../admin/admin.module#AdminModule', canActivate: [AdminActivatorService] },
+    { path: 'user', loadChildren: '../login/login.module#LoginModule' },
+    { path: '', component: HomeComponent, pathMatch: 'full' },
+    { path: '**', component: Error404Component }
+]
+```

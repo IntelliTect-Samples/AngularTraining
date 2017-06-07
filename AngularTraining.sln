@@ -5,12 +5,15 @@ VisualStudioVersion = 15.0.26430.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8F400A7F-CC12-47A2-957C-6001CC41CE84}"
 	ProjectSection(SolutionItems) = preProject
+		NuGet.config = NuGet.config
 		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{604EBB18-F1E9-48BE-9C36-0052F8B386D5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AngularTraining.Web", "src\AngularTraining.Web\AngularTraining.Web.csproj", "{FF558F7D-88E4-4829-A4C8-8133A17F04B7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AngularTraining.Domain", "src\AngularTraining.Domain\AngularTraining.Domain.csproj", "{59895F65-D4B4-4508-9C24-DB93E9AF230D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,11 +25,16 @@ Global
 		{FF558F7D-88E4-4829-A4C8-8133A17F04B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF558F7D-88E4-4829-A4C8-8133A17F04B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF558F7D-88E4-4829-A4C8-8133A17F04B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59895F65-D4B4-4508-9C24-DB93E9AF230D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59895F65-D4B4-4508-9C24-DB93E9AF230D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59895F65-D4B4-4508-9C24-DB93E9AF230D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59895F65-D4B4-4508-9C24-DB93E9AF230D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{FF558F7D-88E4-4829-A4C8-8133A17F04B7} = {604EBB18-F1E9-48BE-9C36-0052F8B386D5}
+		{59895F65-D4B4-4508-9C24-DB93E9AF230D} = {604EBB18-F1E9-48BE-9C36-0052F8B386D5}
 	EndGlobalSection
 EndGlobal

@@ -7,6 +7,8 @@
 
   <ItemGroup>
     <Folder Include="ClientApp\src\app\admin\_components\" />
+    <Folder Include="ClientApp\src\app\login\_components\" />
+    <Folder Include="ClientApp\src\app\_models\" />
     <Folder Include="ClientApp\src\app\nav-bar\_components\" />
     <Folder Include="ClientApp\src\app\time-entry\_pipes\" />
     <Folder Include="wwwroot\" />
@@ -15,6 +17,19 @@
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore" Version="1.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="1.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="1.1.3" />
+    <PackageReference Include="AspNet.Security.OAuth.Validation" Version="1.0.0" />
+    <PackageReference Include="OpenIddict" Version="1.0.0-*" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="1.0.0-*" />
+    <PackageReference Include="OpenIddict.Mvc" Version="1.0.0-*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="1.1.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Design" Version="1.1.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="1.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="1.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="1.1.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AngularTraining.Domain\AngularTraining.Domain.csproj" />
   </ItemGroup>
 
 </Project>
