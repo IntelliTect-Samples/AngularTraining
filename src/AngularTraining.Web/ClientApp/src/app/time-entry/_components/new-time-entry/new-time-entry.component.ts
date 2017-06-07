@@ -1,6 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { TimesheetEntry } from "../../_models/timesheet-entry";
 import { Project } from "../../_models/project";
+import { ProjectService } from "../../_services/project.service";
 
 @Component({
     selector: 'new-time-entry',
@@ -20,7 +21,7 @@ export class NewTimeEntryComponent implements OnInit {
     projects: Project[];
     projectId: number;
 
-    constructor() {
+    constructor(private projectService: ProjectService) {
         this.totalSeconds = 0;
         this.timer = null;
         this.hours = 0;
@@ -34,24 +35,7 @@ export class NewTimeEntryComponent implements OnInit {
             this.timesheetEntry = new TimesheetEntry();
         }
 
-        this.projects = [
-            {
-                id: 1,
-                title: 'Angular Training',
-                client: {
-                    id: 1,
-                    name: 'Contoso, Inc'
-                }
-            },
-            {
-                id: 2,
-                title: 'Biztalk',
-                client: {
-                    id: 2,
-                    name: 'AdventureWorks'
-                }
-            }
-        ]
+        this.projectService.getProjects().then(projects => this.projects = projects);
     }
 
     toggleTimer() {

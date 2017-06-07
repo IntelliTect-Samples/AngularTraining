@@ -8,6 +8,7 @@
   <ItemGroup>
     <Folder Include="ClientApp\src\app\admin\_components\" />
     <Folder Include="ClientApp\src\app\login\_components\" />
+    <Folder Include="ClientApp\src\app\time-entry\_services\" />
     <Folder Include="ClientApp\src\app\_models\" />
     <Folder Include="ClientApp\src\app\nav-bar\_components\" />
     <Folder Include="ClientApp\src\app\time-entry\_pipes\" />

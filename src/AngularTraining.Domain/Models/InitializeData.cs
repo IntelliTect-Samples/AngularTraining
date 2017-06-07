@@ -66,6 +66,22 @@ namespace AngularTraining.Domain.Models
                     }
                 }
             }
+
+            if (!context.Clients.Any())
+            {
+                context.Clients.Add(new Client { Name = "Contoso, Inc" });
+                context.Clients.Add(new Client { Name = "Adventureworks" });
+
+                context.SaveChanges();
+            }
+
+            if (!context.Projects.Any())
+            {
+                context.Projects.Add(new Project { Title = "Angular Training", ClientId = context.Clients.SingleOrDefault(client => client.Name == "Contoso, Inc").Id });
+                context.Projects.Add(new Project { Title = "Biztalk", ClientId = context.Clients.SingleOrDefault(client => client.Name == "Adventureworks").Id });
+
+                context.SaveChanges();
+            }
         }
     }
 }

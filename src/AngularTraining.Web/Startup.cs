@@ -13,6 +13,7 @@ using AngularTraining.Domain.Concrete;
 using AspNet.Security.OpenIdConnect.Primitives;
 using AngularTraining.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using AngularTraining.Domain.Abstract;
 
 namespace AngularTraining.Web
 {
@@ -67,6 +68,10 @@ namespace AngularTraining.Web
             });
 
             services.AddMvc();
+
+            services.AddScoped<ITimesheetEntryRepository, TimesheetEntryRepository>();
+            services.AddScoped<IClientRepository, ClientRepository>();
+            services.AddScoped<IProjectRepository, ProjectRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

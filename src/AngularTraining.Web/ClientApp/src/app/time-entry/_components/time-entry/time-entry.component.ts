@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { TimesheetEntry } from "../../_models/timesheet-entry";
+import { TimesheetEntryService } from "../../_services/timesheet-entry.service";
 
 @Component({
     selector: 'time-entry',
@@ -10,41 +11,24 @@ export class TimeEntryComponent implements OnInit {
     timesheetEntries: TimesheetEntry[];
     timesheetEntry: TimesheetEntry;
 
-    constructor() { }
+    constructor(private timesheetEntryService: TimesheetEntryService) { }
 
     ngOnInit() {
-        this.timesheetEntries = [
-            {
-                id: 1, description: "Working on Angular Training", startTime: new Date('5/30/2017 8:00:00'), endTime: new Date('5/30/2017 14:15:00'),
-                project: {
-                    id: 1, title: 'Angular Training',
-                    client: {
-                        id: 1, name: 'Contoso, Inc'
-                    }
+        this.timesheetEntryService.getTimesheetEntries()
+            .then((timeEntries) => {
+                this.timesheetEntries = timeEntries;
+                for (let entry of this.timesheetEntries) {
+                    entry.endTime = new Date(entry.endTime);
+                    entry.startTime = new Date(entry.startTime);
                 }
-            },
-            {
-                id: 2, description: "Working on Angular Training", startTime: new Date('5/30/2017 10:00'), endTime: new Date('5/30/2017 12:00'),
-                project: {
-                    id: 1, title: 'Angular Training',
-                    client: {
-                        id: 1, name: 'Contoso, Inc'
-                    }
-                }
-            },
-            {
-                id: 3, description: "Biztalking my brains out", startTime: new Date('5/30/2017 10:00'), endTime: new Date('5/30/2017 12:00'),
-                project: {
-                    id: 2, title: 'Biztalk',
-                    client: {
-                        id: 2, name: 'AdventureWorks'
-                    }
-                }
-            }
-        ];
+            });
     }
 
     saveEntry(entry: TimesheetEntry) {
-        this.timesheetEntries.splice(0, 0, entry);
+        this.timesheetEntryService.insertTimesheetEntry(entry).then((timeEntry) => {
+            timeEntry.endTime = new Date(timeEntry.endTime);
+            timeEntry.startTime = new Date(timeEntry.startTime);
+            this.timesheetEntries.splice(0, 0, timeEntry);
+        });
     }
 }
