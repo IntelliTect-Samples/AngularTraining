@@ -23,6 +23,7 @@ namespace AngularTraining.Web.Controllers
         }
 
         [HttpGet, Authorize]
+        [ResponseCache(NoStore = true)]
         public IEnumerable<TimesheetEntry> Get()
         {
             var userId = Convert.ToInt32(User.FindFirst(OpenIdConnectConstants.Claims.Subject).Value);

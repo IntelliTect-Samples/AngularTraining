@@ -14,7 +14,8 @@ module.exports = {
         rules: [
             { test: /\.ts$/, include: /ClientApp/, use: ['awesome-typescript-loader?silent=true', 'angular2-template-loader', 'angular-router-loader'] },
             { test: /\.html$/, include: /ClientApp/, use: ['html-loader?minimize=false'] },
-            { test: /\.css$/, use: ['to-string-loader', 'css-loader'] }
+            { test: /\.css$/, use: ['to-string-loader', 'css-loader'] },
+            { test: require.resolve('toastr'), use: [{ loader: 'expose-loader', options: 'toastr' }] }
         ]
     },
     plugins: [

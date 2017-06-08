@@ -22,6 +22,8 @@ module.exports = {
             'jquery',
             'reflect-metadata',
             'rxjs',
+            'toastr',
+            'toastr/build/toastr.css',
             'zone.js'
         ]
     },

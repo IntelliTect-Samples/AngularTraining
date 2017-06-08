@@ -7,11 +7,11 @@ import 'rxjs/add/operator/toPromise';
 @Injectable()
 export class TimesheetEntryService {
 
-    private headers = new Headers({ 'Authorization': 'Bearer ' + this.authService.access_token });
     constructor(private http: Http, private authService: AuthenticationService) { }
 
     getTimesheetEntries(): Promise<TimesheetEntry[]> {
-        return this.http.get('/api/timesheetentry', {headers: this.headers})
+        let headers = new Headers({ 'Authorization': 'Bearer ' + this.authService.access_token });
+        return this.http.get('/api/timesheetentry', {headers: headers})
             .toPromise()
             .then((response) => {
                 return response.json() as TimesheetEntry[];
@@ -25,9 +25,10 @@ export class TimesheetEntryService {
     }
 
     insertTimesheetEntry(timesheetEntry: TimesheetEntry): Promise<TimesheetEntry> {
-        this.headers.append('Content-Type', 'application/json');
+        let headers = new Headers({ 'Authorization': 'Bearer ' + this.authService.access_token });
+        headers.append('Content-Type', 'application/json');
         return this.http
-            .post('/api/timesheetentry', JSON.stringify(timesheetEntry), { headers: this.headers })
+            .post('/api/timesheetentry', JSON.stringify(timesheetEntry), { headers: headers })
             .toPromise()
             .then(response => response.json() as TimesheetEntry)
             .catch(this.handleError);

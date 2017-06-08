@@ -1,3 +1,5 @@
-<p>
-  manage-users works!
-</p>
+<create-user *ngIf="addUser" (userCreated)="userCreated($event)"></create-user>
+<div *ngIf="!addUser">
+    <button class="btn btn-primary" (click)="addUser = true">Add User</button>
+    <user-list *ngIf="!addUser" [users]="users"></user-list>
+</div>

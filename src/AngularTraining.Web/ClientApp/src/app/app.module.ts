@@ -11,6 +11,7 @@ import { HttpModule } from "@angular/http";
 import { AuthActivatorService } from "./_services/auth-activator.service";
 import { AdminActivatorService } from "./_services/admin-activator.service";
 import { HomeComponent } from './home/home.component';
+import { ToastrService } from "./_services/toastr.service";
 
 @NgModule({
     imports: [
@@ -26,6 +27,6 @@ import { HomeComponent } from './home/home.component';
         Error404Component,
         HomeComponent
     ],
-    providers: [AuthenticationService, AuthActivatorService, AdminActivatorService]
+    providers: [AuthenticationService, AuthActivatorService, AdminActivatorService, ToastrService]
 })
 export class AppModule { }

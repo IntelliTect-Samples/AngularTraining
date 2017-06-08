@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="ClientApp\src\app\admin\_services\" />
     <Folder Include="ClientApp\src\app\admin\_components\" />
     <Folder Include="ClientApp\src\app\login\_components\" />
     <Folder Include="ClientApp\src\app\time-entry\_services\" />
